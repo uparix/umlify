@@ -21,7 +21,7 @@ describe("golden fixtures", () => {
 
   it("has the replayed calls for the ported modules only", () => {
     expect(edn("calls").sort()).toEqual(
-      ["config", "detail", "geom", "hierarchy", "ir", "overlay", "policy", "source", "source-clojure", "source-rust"].map(
+      ["config", "detail", "hierarchy", "ir", "overlay", "policy", "source", "source-clojure", "source-rust"].map(
         (n) => `${n}.edn`,
       ).sort(),
     );

@@ -127,9 +127,14 @@ Each phase ends with green tests and a runnable `npm run dev`.
    - Copied the goldens and examples.
    - Empty page in archify chrome: toolbar with theme toggle (T), style
      presets (S), disabled zoom/find/export; diagram surface; side rail.
-1. **EDN + Domain port.** Reader, `ClojureHash`, Model, IR, Policy,
-   Hierarchy, Grades. *Done when* the replayed domain calls and the `:view`
-   stage of the 38 hierarchy goldens pass.
+1. **EDN + Domain port.** *(done)* Reader, `ClojureHash`, Model, IR,
+   Policy, Hierarchy, Grades in `packages/core/src/{edn,domain}`.
+   - 859 recorded Clojure calls (config, ir, policy, hierarchy) replay
+     equal, and the `:view` stage of all 38 hierarchy goldens matches.
+   - Hand-written tests cover what the recordings miss (edge-kind strength
+     order).
+   - JS has one number type, so an integral float (`1.0`) reads as `1`;
+     nothing the viewer shows depends on the difference.
 2. **Metrics overlay.** CRAP plus both mutation formats, snapshot
    ownership, pooling. *Done when* the 5 painted documents match.
 3. **Archify grid layout + routing.** Rows from level or rank, columns by
