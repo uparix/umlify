@@ -1,10 +1,8 @@
+import type { Scene } from "@umlify/core";
+import { documentTitle, type Loaded } from "../live/load";
 import type { Connection } from "../live/session";
-import type { Loaded } from "../live/load";
 
-/**
- * Header status (live chip, title), the error toast, and the scene summary
- * shown in the diagram panel until the renderer draws the scene.
- */
+/** Header status (live chip, title) and the error toast. */
 
 const LABEL: Record<Connection, string> = {
   connecting: "Connecting…",
@@ -23,24 +21,22 @@ export function showConnection(state: Connection): void {
 const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 export function showLoaded(r: Loaded): void {
-  const title = r.scene.title;
+  const title = documentTitle(r.doc);
   el("doc-title").textContent = title;
   document.title = `${title} — umlify`;
   el("toast").hidden = true;
-
-  const boxes = r.scene.nodes.filter((n) => n.kind === "box").length;
-  const ovals = r.scene.nodes.length - boxes;
-  const summary = el("scene-summary");
-  summary.hidden = false;
   el("empty-state").hidden = true;
-  summary.querySelector("h2")!.textContent = title;
-  summary.querySelector("[data-counts]")!.textContent = [
-    count(boxes, "box", "boxes"),
-    count(r.scene.edges.length, "arrow", "arrows"),
-    ...(ovals > 0 ? [count(ovals, "library", "libraries")] : []),
+}
+
+/** What is on screen, in the live chip's tooltip. */
+export function showRendered(r: Loaded, scene: Scene, layoutMs: number): void {
+  const boxes = scene.nodes.filter((nd) => nd.kind === "box").length;
+  el("live-chip").title = [
+    r.path,
+    r.metricsFiles > 0 ? count(r.metricsFiles, "metrics file", "metrics files") : "no metrics",
+    `${count(boxes, "box", "boxes")}, ${count(scene.edges.length, "arrow", "arrows")}`,
+    `laid out in ${Math.round(layoutMs)} ms`,
   ].join(" · ");
-  summary.querySelector("[data-source]")!.textContent =
-    `${r.path} · ${r.metricsFiles > 0 ? count(r.metricsFiles, "metrics file", "metrics files") : "no metrics"} · laid out in ${Math.round(r.layoutMs)} ms`;
 }
 
 export function showFailure(message: string): void {

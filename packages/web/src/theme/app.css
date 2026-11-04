@@ -269,8 +269,6 @@ html[data-rail="collapsed"] .reader-rail { display: none; }
 }
 
 .empty-state[hidden] { display: none; }
-.scene-summary [data-counts] { font-family: var(--font-mono); color: var(--text); margin-bottom: 0.25rem; }
-.scene-source { font-size: 0.75rem; margin-bottom: 0; }
 
 .toast {
   position: absolute;

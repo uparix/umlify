@@ -180,13 +180,33 @@ with Vite middleware on `examples/uml-viewer.edn`).
      an atomic IR rewrite and a new snapshot show within 1 s, a broken IR
      shows a toast and keeps the last good version, a server restart
      reconnects and catches up, and `?file=` opens another IR.
-5. **Rendering + navigation.** Also keep level, selection and zoom across
-   a live reload (moved here from phase 4, which had nothing to zoom).
-   - Archify class nodes with grade colours, C/M dots, I/α glyphs and
-     italic stereotypes; foreign ovals; ports.
-   - Edges with markers per kind and red violations.
-   - Double-click drill-down with breadcrumbs; back with Esc or Backspace;
-     pan/zoom; minimap.
+5. **Rendering + navigation.** *(done)* `packages/web/src/{render,view}`.
+   - SVG in archify's class-diagram idiom: each card is an opaque mask
+     stroked in one hue, with a tinted header, cap line, badge, ruled
+     compartments and zebra rows. archify's UML markers mark each kind
+     (dependency dashed with an open head, implements dashed with a hollow
+     triangle, diamonds for aggregation and composition), and violations
+     draw red.
+   - The hue is the box's grade, blending archify's security, cloud and
+     backend tokens over umlviewer's 1–10 scale. C/M dots show each grade;
+     the badge shows the stereotype (I, α) or the level.
+     - Deviation: a document with no metrics at all uses the neutral
+       external tone instead of all red.
+   - Navigation:
+     - Click to select; neighbours stay and the rest fades.
+     - Double-click a folder (or a folder row) to drill in. Backspace, Esc,
+       breadcrumbs or the browser's Back go up.
+     - Drag or two-finger scroll pans; pinch or Ctrl-wheel zooms; + − 0 and
+       the toolbar buttons zoom and fit.
+     - The minimap shows when the scene overflows.
+   - Level and selection live in the URL hash (`#path=engine&sel=…`). A
+     live reload keeps level, selection and camera, and falls back to the
+     parent when the open level disappears.
+   - Checked by 21 web unit tests (camera, hash, grades, SVG) and 6 viewer
+     browser tests; the 6 live tests now check the drawn diagram.
+   - Still to come (phase 6): the "triangles" declutter mode hides arrows
+     but does not yet draw umlviewer's dependency triangles, and the side
+     panel does not yet follow the selection.
 6. **Rail and exploration.**
    - Focus passport, the class card from `Detail`: metrics, ops, fields,
      relationships.

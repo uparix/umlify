@@ -1,0 +1,106 @@
+/* The diagram in archify's class-diagram idiom (renderers/class): the card
+   is the opaque mask stroked in its hue, the header a light tint of it, a
+   cap line and badge chip in full hue. Here the hue is the box's grade. */
+
+.diagram-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  font-family: var(--font-ui);
+}
+.diagram-svg.panning { cursor: grabbing; }
+.diagram-svg[hidden], .u-edges[hidden] { display: none; }
+.diagram-svg text { font-family: var(--font-mono); }
+
+/* ---------- boxes ---------- */
+
+.u-node { cursor: pointer; outline: none; transition: opacity 0.15s; }
+.u-mask { fill: var(--mask); }
+.u-card { fill: var(--mask); stroke: color-mix(in srgb, var(--u-hue) 46%, var(--lane-stroke)); stroke-width: 1.2; }
+.u-header { fill: color-mix(in srgb, var(--u-hue) 16%, transparent); stroke: none; }
+.u-cap { stroke: var(--u-hue); stroke-width: 2.6; stroke-linecap: round; fill: none; pointer-events: none; }
+.u-badge rect { fill: var(--u-hue); }
+.u-badge text { fill: var(--mask); font-size: 10px; font-weight: 800; text-anchor: middle; }
+.u-dots circle { stroke: var(--mask); stroke-width: 1.5; }
+.u-stereotype { fill: var(--text-muted); font-size: 9.5px; letter-spacing: 0.04em; text-anchor: middle; }
+.u-name { fill: var(--text); font-size: 13.5px; font-weight: 700; text-anchor: middle; }
+.u-italic { font-style: italic; }
+.u-rule { stroke: color-mix(in srgb, var(--u-hue) 22%, var(--lane-stroke)); stroke-width: 1; }
+.u-zebra { fill: color-mix(in srgb, var(--u-hue) 6%, transparent); }
+.u-row text { fill: var(--text); font-size: 11px; }
+.u-row-in-port text, .u-row-out-port text { fill: var(--text-muted); }
+.u-drill text { fill: color-mix(in srgb, var(--u-hue) 55%, var(--text)); }
+.u-muted { fill: var(--text-muted); }
+.u-punct { fill: var(--text-muted); opacity: 0.8; }
+
+.u-drillable .u-card { stroke-width: 1.4; }
+.u-node:hover .u-card, .u-node:focus-visible .u-card { stroke: var(--u-hue); }
+
+.u-oval-shape { fill: var(--external-fill); stroke: var(--external-stroke); stroke-width: 1.2; }
+.u-oval-name { fill: var(--text); font-size: 12px; text-anchor: middle; }
+.u-oval:hover .u-oval-shape { stroke-width: 2; }
+
+/* ---------- frames ---------- */
+
+.u-frame rect { fill: var(--lane-fill); stroke: var(--lane-stroke); stroke-dasharray: 4 4; }
+.u-frame text { fill: var(--text-muted); font-size: 11px; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* ---------- relationships ---------- */
+
+.u-edge { fill: none; stroke: var(--arrow); stroke-width: 1.5; transition: opacity 0.15s; }
+.u-dashed { stroke-dasharray: 6 4; }
+.u-edge.u-violating { stroke: var(--security-stroke); stroke-width: 1.8; }
+.u-edge-hit { fill: none; stroke: transparent; stroke-width: 10; }
+.u-marker { stroke: var(--arrow); }
+.u-marker.u-violating { stroke: var(--security-stroke); }
+.u-marker-hollow { fill: var(--mask); }
+.u-marker-filled { fill: var(--arrow); }
+.u-marker.u-violating .u-marker-filled { fill: var(--security-stroke); }
+
+/* ---------- selection: the selected box, its arrows and neighbours stay; the rest fades ---------- */
+
+.diagram-svg[data-selection] .u-node:not(.u-related) { opacity: 0.3; }
+.diagram-svg[data-selection] [data-edge-id]:not(.u-related) { opacity: 0.12; }
+.u-node.u-selected .u-card { stroke: var(--u-hue); stroke-width: 2.4; }
+.u-oval.u-selected .u-oval-shape { stroke-width: 2.4; }
+[data-edge-id].u-related .u-edge { stroke-width: 2.2; }
+
+@media (prefers-reduced-motion: reduce) {
+  .u-node, .u-edge { transition: none; }
+}
+
+/* ---------- breadcrumbs ---------- */
+
+.breadcrumbs ol { display: flex; flex-wrap: wrap; gap: 0.25rem; list-style: none; }
+.breadcrumbs li + li::before { content: "›"; margin-right: 0.25rem; color: var(--text-dim); }
+.breadcrumbs button {
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  cursor: pointer;
+}
+.breadcrumbs button:hover { color: var(--text); text-decoration: underline; }
+.breadcrumbs [aria-current] { color: var(--text); }
+
+/* ---------- minimap ---------- */
+
+.minimap {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  width: 180px;
+  border: 1px solid var(--panel-border);
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--mask) 88%, transparent);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+}
+.minimap[hidden] { display: none; }
+.minimap svg { display: block; width: 100%; height: auto; }
+.minimap .mm-node { fill: var(--text-dim); }
+.minimap .mm-view { fill: color-mix(in srgb, var(--arrow-emphasis) 14%, transparent); stroke: var(--arrow-emphasis); stroke-width: 2; vector-effect: non-scaling-stroke; }
