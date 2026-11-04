@@ -81,10 +81,20 @@
 
       <main class="workspace">
         <section class="diagram-container" id="diagram" aria-label="Diagram">
-          <div class="empty-state">
+          <div class="empty-state" id="empty-state">
             <h2>No diagram loaded</h2>
             <p>Start umlify with an IR file and it opens here, updating live as the files change:</p>
             <code>umlify path/to/ir.edn</code>
+          </div>
+          <div class="empty-state scene-summary" id="scene-summary" hidden>
+            <h2></h2>
+            <p data-counts></p>
+            <p class="scene-source" data-source></p>
+          </div>
+          <div class="toast" id="toast" role="alert" hidden>
+            <strong>Could not reload</strong>
+            <span data-message></span>
+            <span class="toast-note">Showing the last version that loaded.</span>
           </div>
           <button class="rail-reveal" id="rail-reveal" type="button" title="Show side panel" aria-label="Show side panel" aria-controls="reader-rail">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>

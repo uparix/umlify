@@ -1,0 +1,13 @@
+{
+  "name": "@umlify/server",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Local, read-only server of umlify: serves the project's IR, metrics and sources, and pushes changes over SSE.",
+  "type": "module",
+  "bin": {
+    "umlify": "./src/cli.ts"
+  },
+  "scripts": {
+    "start": "node src/cli.ts"
+  }
+}

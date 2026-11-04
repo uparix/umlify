@@ -268,6 +268,31 @@ html[data-rail="collapsed"] .reader-rail { display: none; }
   color: var(--backend-stroke);
 }
 
+.empty-state[hidden] { display: none; }
+.scene-summary [data-counts] { font-family: var(--font-mono); color: var(--text); margin-bottom: 0.25rem; }
+.scene-source { font-size: 0.75rem; margin-bottom: 0; }
+
+.toast {
+  position: absolute;
+  left: 50%;
+  bottom: 1rem;
+  transform: translateX(-50%);
+  display: grid;
+  gap: 0.25rem;
+  width: min(36rem, calc(100% - 2rem));
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--security-stroke);
+  border-radius: 0.75rem;
+  background: var(--mask);
+  box-shadow: 0 16px 40px -16px rgba(2, 6, 23, 0.45);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+.toast[hidden] { display: none; }
+.toast strong { color: var(--security-stroke); font-weight: 650; }
+.toast [data-message] { font-family: var(--font-mono); font-size: 0.75rem; overflow-wrap: anywhere; }
+.toast-note { color: var(--text-muted); }
+
 .rail-reveal, .rail-control {
   display: inline-grid;
   place-items: center;

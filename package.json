@@ -4,19 +4,21 @@
   "description": "Live, read-only browser viewer for umlviewer IR files, in the style of archify.",
   "type": "module",
   "engines": {
-    "node": ">=22.12"
+    "node": ">=22.18"
   },
   "workspaces": [
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm run dev -w @umlify/web",
+    "start": "node packages/server/src/cli.ts",
+    "dev": "node packages/server/src/cli.ts --dev examples/uml-viewer.edn",
+    "dev:web": "npm run dev -w @umlify/web",
     "build": "npm run build -w @umlify/web",
-    "typecheck": "tsc -p packages/core && tsc -p packages/web && tsc -p e2e",
+    "typecheck": "tsc -p packages/core && tsc -p packages/server && tsc -p packages/web && tsc -p e2e",
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "e2e": "playwright test",
+    "e2e": "npm run build && playwright test",
     "check": "npm run typecheck && npm run lint && npm run test && npm run e2e"
   },
   "devDependencies": {

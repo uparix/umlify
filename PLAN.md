@@ -67,7 +67,8 @@ to the project.
    - TypeScript 6.0 (typescript-eslint doesn't support 7 yet); Node ≥ 22.12;
      npm workspaces.
    - Browser: Vite plus plain TS and SVG.
-   - Server: `node:http` plus `chokidar`.
+   - Server: `node:http` and `fs.watch` (recursive), no dependencies;
+     Node runs its TypeScript directly (type stripping, Node ≥ 22.18).
    - Tests: Vitest for unit and parity tests, Playwright for end-to-end
      tests, run in the installed Brave, or in Chrome when present.
    - Linting: ESLint plus typescript-eslint.
@@ -120,7 +121,8 @@ Every path is resolved and checked to stay under the project root.
 
 ## Phases
 
-Each phase ends with green tests and a runnable `npm run dev`.
+Each phase ends with green tests and a runnable `npm run dev` (the server
+with Vite middleware on `examples/uml-viewer.edn`).
 
 0. **Scaffold.** *(done)*
    - Workspaces, TS config, Vite, Vitest, Playwright, ESLint.
@@ -163,11 +165,23 @@ Each phase ends with green tests and a runnable `npm run dev`.
    - Speed: under 150 ms for a 13-box level; about 0.4–0.6 s for a 30-box,
      67-edge proposal. If larger projects feel slow, phase 5 can move
      layout into a Web Worker.
-4. **Server + live reload.** CLI, root discovery, file API, watcher, SSE.
-   *Done when* a Playwright test rewrites `crap.edn` or the IR (temp file +
-   rename) and the page repaints within 1 s without losing selection or
-   zoom, and a broken IR shows a toast while the old diagram stays.
-5. **Rendering + navigation.**
+4. **Server + live reload.** *(done)* `packages/server`, `packages/web/src/live`.
+   - `umlify <ir.edn> [--port] [--no-open] [--browser brave|chrome] [--dev]`
+     finds the project root, binds to 127.0.0.1, and answers only to local
+     host names (no DNS rebinding). It is read-only: GET only, and paths
+     can't leave the root, symlinks included.
+   - `fs.watch` on the root (recursive, `.edn` only, debounced 150 ms)
+     pushes `changed` over SSE. The page reloads only for its own IR or
+     `.metrics/`, drops stale responses, and catches up after a reconnect.
+   - The browser parses, paints and lays out with `@umlify/core`. Until
+     phase 5 draws the scene, it shows the title and a box/arrow/library
+     summary.
+   - Checked by 16 server tests and 6 browser tests on a scratch project:
+     an atomic IR rewrite and a new snapshot show within 1 s, a broken IR
+     shows a toast and keeps the last good version, a server restart
+     reconnects and catches up, and `?file=` opens another IR.
+5. **Rendering + navigation.** Also keep level, selection and zoom across
+   a live reload (moved here from phase 4, which had nothing to zoom).
    - Archify class nodes with grade colours, C/M dots, I/α glyphs and
      italic stereotypes; foreign ovals; ports.
    - Edges with markers per kind and red violations.
