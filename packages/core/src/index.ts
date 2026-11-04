@@ -24,3 +24,5 @@ export {
 } from "./metrics/overlay";
 export { layoutDiagram, LAYOUT, type Scene, type SceneEdge, type SceneFrame, type SceneNode } from "./layout/layout";
 export { CARD, measureCard, memberText, type Card, type CardRow, type Compartment } from "./layout/card";
+export * from "./app/source";
+export * from "./app/passport";

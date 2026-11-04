@@ -61,7 +61,7 @@
             </div>
           </div>
           <div class="toolbar-group">
-            <button id="btn-find" type="button" title="Find a class (⌘K)" aria-label="Find a class" disabled>
+            <button id="btn-find" type="button" title="Find a class (⌘K or /)" aria-label="Find a class" aria-keyshortcuts="Meta+K Control+K /" disabled>
               <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
               <span>Find</span>
             </button>
@@ -73,6 +73,9 @@
             </button>
             <button id="btn-fit" type="button" title="Fit to view (0)" aria-label="Reset diagram view" disabled>
               <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></svg>
+            </button>
+            <button id="btn-present" type="button" title="Present: the diagram alone (F)" aria-label="Enter presentation stage" aria-pressed="false" aria-keyshortcuts="F">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2" /><path d="M8 20h8M12 16v4" /></svg>
             </button>
           </div>
           <button id="btn-export" class="primary" type="button" title="Export SVG or PNG (E)" aria-label="Export diagram" disabled>Export</button>
@@ -91,6 +94,7 @@
             <span data-message></span>
             <span class="toast-note">Showing the last version that loaded.</span>
           </div>
+          <button class="present-exit" id="present-exit" type="button" title="Leave presentation (F)">Exit presentation</button>
           <button class="rail-reveal" id="rail-reveal" type="button" title="Show side panel" aria-label="Show side panel" aria-controls="reader-rail">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
           </button>
@@ -98,7 +102,7 @@
 
         <aside class="reader-rail" id="reader-rail" aria-label="Side panel">
           <div class="rail-head">
-            <h2>Details</h2>
+            <h2>View</h2>
             <button class="rail-control" id="rail-collapse" type="button" title="Collapse side panel" aria-label="Collapse side panel" aria-controls="reader-rail" aria-expanded="true">
               <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
             </button>

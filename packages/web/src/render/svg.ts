@@ -128,7 +128,41 @@ function renderRows(node: SceneNode): string {
     .join("");
 }
 
-function renderBox(node: SceneNode, opts: RenderOptions): string {
+/** Arrows into and out of one box, for the triangles declutter mode. */
+interface Counts {
+  in: SceneEdge[];
+  out: SceneEdge[];
+}
+
+function countsOf(scene: Scene): Map<string, Counts> {
+  const m = new Map<string, Counts>(scene.nodes.map((nd) => [nd.id, { in: [], out: [] }]));
+  for (const e of scene.edges) {
+    m.get(e.to)?.in.push(e);
+    m.get(e.from)?.out.push(e);
+  }
+  return m;
+}
+
+/**
+ * With arrows hidden, a chip on the top edge counts incoming dependencies
+ * and one on the bottom edge outgoing ones; red when any of them violates.
+ */
+function renderCounts(node: SceneNode, c: Counts | undefined): string {
+  if (!c) return "";
+  const chip = (edges: SceneEdge[], incoming: boolean): string => {
+    if (edges.length === 0) return "";
+    const text = `${incoming ? "▲" : "▼"} ${edges.length}`;
+    const w = 14 + text.length * 6.6;
+    const cx = node.x + node.width / 2 + (incoming ? -w / 2 - 3 : w / 2 + 3);
+    const cy = incoming ? node.y : node.y + node.height;
+    const names = edges.map((e) => (incoming ? e.from : e.to)).join(", ");
+    const bad = edges.some((e) => e.violating) ? " u-violating" : "";
+    return `<g class="u-count${bad}" data-count="${incoming ? "in" : "out"}"><title>${incoming ? "Used by" : "Depends on"}: ${esc(names)}</title><rect x="${n(cx - w / 2)}" y="${n(cy - 8)}" width="${n(w)}" height="16" rx="8"/><text x="${n(cx)}" y="${n(cy + 3.5)}">${text}</text></g>`;
+  };
+  return chip(c.in, true) + chip(c.out, false);
+}
+
+function renderBox(node: SceneNode, opts: RenderOptions, counts?: Counts): string {
   const { x, y, width: w, height: h } = node;
   const g = gradesOf(node.cls);
   const hue = opts.graded ? gradeColor(g.combined) : NEUTRAL;
@@ -151,6 +185,7 @@ ${dots}
 ${node.card.stereotype ? `<text class="u-stereotype" x="${n(cx)}" y="${n(y + 16)}">${esc(node.card.stereotype)}</text>` : ""}
 <text class="u-name${node.card.italic ? " u-italic" : ""}" x="${n(cx)}" y="${n(nameY)}">${esc(node.card.title)}</text>
 ${renderRows(node)}
+${renderCounts(node, counts)}
 </g>`;
 }
 
@@ -173,8 +208,9 @@ function renderFrame(f: SceneFrame): string {
 
 /** The whole scene: frames, then edges under the boxes (archify z-order), then boxes. */
 export function renderScene(scene: Scene, opts: RenderOptions): string {
+  const counts = scene.hideEdges ? countsOf(scene) : undefined;
   return `<defs>${markerDefs()}</defs>
 <g class="u-frames">${scene.frames.map(renderFrame).join("")}</g>
 <g class="u-edges"${scene.hideEdges ? " hidden" : ""}>${scene.edges.map(renderEdge).join("")}</g>
-<g class="u-nodes">${scene.nodes.map((nd) => (nd.kind === "oval" ? renderOval(nd) : renderBox(nd, opts))).join("")}</g>`;
+<g class="u-nodes">${scene.nodes.map((nd) => (nd.kind === "oval" ? renderOval(nd) : renderBox(nd, opts, counts?.get(nd.id)))).join("")}</g>`;
 }

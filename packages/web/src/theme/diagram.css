@@ -44,6 +44,11 @@
 .u-oval-name { fill: var(--text); font-size: 12px; text-anchor: middle; }
 .u-oval:hover .u-oval-shape { stroke-width: 2; }
 
+.u-count rect { fill: var(--mask); stroke: var(--arrow); stroke-width: 1; }
+.u-count text { fill: var(--text-muted); font-size: 10px; text-anchor: middle; }
+.u-count.u-violating rect { stroke: var(--security-stroke); }
+.u-count.u-violating text { fill: var(--security-stroke); }
+
 /* ---------- frames ---------- */
 
 .u-frame rect { fill: var(--lane-fill); stroke: var(--lane-stroke); stroke-dasharray: 4 4; }

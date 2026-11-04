@@ -1,18 +1,32 @@
-import { layoutDiagram, segs, viewAt, type Diagram, type NodeID, type Scene } from "@umlify/core";
+import {
+  applyDeclutter,
+  layerView,
+  layoutDiagram,
+  namedProposals,
+  proposalView,
+  segs,
+  viewAt,
+  type Declutter,
+  type Diagram,
+  type HierarchyDocument,
+  type NodeID,
+  type Scene,
+} from "@umlify/core";
 import { documentTitle, type Loaded } from "../live/load";
 import { renderScene } from "../render/svg";
 import { centerOn, fit, pan, transformOf, visibleWorld, zoomAt, type Camera } from "./camera";
-import { formatHash, parseHash, type ViewState } from "./state";
+import { formatHash, parseHash, sameView, type Trace, type ViewState } from "./state";
 
 /**
- * The diagram on screen: lays out the current level, draws it, and handles
- * pan, zoom, selection, drill-down, breadcrumbs and the minimap. A live
- * reload keeps the level, the selection and the camera; a new level fits.
+ * The diagram on screen: builds the view for the current level or proposal
+ * and declutter mode, lays it out, draws it, and handles pan, zoom,
+ * selection, tracing, drill-down, breadcrumbs and the minimap. A live
+ * reload keeps the view, the selection and the camera.
  */
 
 export interface ViewerEvents {
-  /** After every draw, with the scene and how long layout took. */
-  rendered(scene: Scene, layoutMs: number): void;
+  /** After every change of view or selection. */
+  changed(info: { loaded: Loaded; scene: Scene; state: ViewState; layoutMs: number }): void;
 }
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -23,9 +37,30 @@ const DRAG_SLOP = 3;
 const isTyping = (t: EventTarget | null) =>
   t instanceof HTMLElement && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
 
+/** Nodes and arrows reachable from `id` along the arrows (down) or against them (up). */
+export function traceFrom(scene: Scene, id: NodeID, dir: Trace): { nodes: Set<NodeID>; edges: Set<string> } {
+  const nodes = new Set([id]);
+  const edges = new Set<string>();
+  const queue = [id];
+  while (queue.length > 0) {
+    const cur = queue.shift() as NodeID;
+    for (const e of scene.edges) {
+      const [from, to] = dir === "down" ? [e.from, e.to] : [e.to, e.from];
+      if (from !== cur) continue;
+      edges.add(e.id);
+      if (!nodes.has(to)) {
+        nodes.add(to);
+        queue.push(to);
+      }
+    }
+  }
+  return { nodes, edges };
+}
+
 export class Viewer {
   private loaded?: Loaded;
   private scene?: Scene;
+  private layoutMs = 0;
   private state: ViewState = parseHash(location.hash);
   private camera: Camera = { x: 0, y: 0, k: 1 };
   /** The reader moved the camera since the last fit; a reload then keeps it. */
@@ -41,10 +76,10 @@ export class Viewer {
     this.svg = document.createElementNS(SVG_NS, "svg");
     this.svg.classList.add("diagram-svg");
     this.svg.setAttribute("role", "img");
+    this.svg.setAttribute("hidden", "");
     this.viewport = document.createElementNS(SVG_NS, "g");
     this.viewport.classList.add("viewport");
     this.svg.append(this.viewport);
-    this.svg.setAttribute("hidden", "");
     container.prepend(this.svg);
 
     this.minimap = document.createElement("div");
@@ -64,7 +99,11 @@ export class Viewer {
     }).observe(container);
   }
 
-  /** A new or reloaded document. Keeps level, selection and camera when they still apply. */
+  get current(): { loaded: Loaded; scene: Scene; state: ViewState } | undefined {
+    return this.loaded && this.scene ? { loaded: this.loaded, scene: this.scene, state: this.state } : undefined;
+  }
+
+  /** A new or reloaded document. Keeps view, selection and camera when they still apply. */
   show(loaded: Loaded): void {
     const sameFile = this.loaded?.path === loaded.path;
     this.loaded = loaded;
@@ -73,30 +112,54 @@ export class Viewer {
     this.writeHash(false);
   }
 
-  // ---------- levels ----------
+  // ---------- views ----------
 
-  private viewFor(path: string[]): Diagram {
-    const doc = (this.loaded as Loaded).doc;
-    return doc.kind === "hierarchy" ? viewAt(doc.doc, path) : (doc.diagrams[0] as Diagram);
+  private hierarchy(): HierarchyDocument | undefined {
+    const doc = this.loaded?.doc;
+    return doc?.kind === "hierarchy" ? doc.doc : undefined;
   }
 
-  /** The deepest prefix of `path` that still has boxes (a reload may remove a level). */
-  private existingPath(path: string[]): string[] {
-    const doc = (this.loaded as Loaded).doc;
-    if (doc.kind !== "hierarchy") return [];
-    for (let p = path; ; p = p.slice(0, -1)) {
-      if (p.length === 0 || viewAt(doc.doc, p).packages.some((pk) => pk.classes.length > 0)) return p;
+  /** `wanted` with whatever no longer exists in the document dropped. */
+  private resolve(wanted: ViewState): ViewState {
+    const doc = this.hierarchy();
+    if (!doc) return { path: [], selected: wanted.selected, mode: wanted.mode, trace: wanted.trace };
+    if (wanted.proposal !== undefined) {
+      if (!namedProposals(doc).some((p) => p.id === wanted.proposal)) return this.resolve({ ...wanted, proposal: undefined, layer: undefined });
+      const root = proposalView(doc, wanted.proposal);
+      const layerExists =
+        wanted.layer !== undefined &&
+        root.packages.some((p) => p.id === wanted.layer || p.classes.some((c) => c.id === wanted.layer && c.proposalGroup));
+      return { ...wanted, path: [], layer: layerExists ? wanted.layer : undefined };
     }
+    let path = wanted.path;
+    while (path.length > 0 && !viewAt(doc, path).packages.some((p) => p.classes.length > 0)) path = path.slice(0, -1);
+    return { ...wanted, path, layer: undefined };
+  }
+
+  private viewFor(s: ViewState): Diagram {
+    const loaded = this.loaded as Loaded;
+    const doc = this.hierarchy();
+    let mode: Declutter = s.mode ?? "full";
+    // An open layer is one package already; "classes" would empty it.
+    if (s.layer && mode === "classes") mode = "elements";
+    const source = !doc
+      ? ((loaded.doc.kind === "diagrams" ? loaded.doc.diagrams[0] : undefined) as Diagram)
+      : s.proposal
+        ? s.layer
+          ? layerView(doc, s.proposal, s.layer)
+          : proposalView(doc, s.proposal)
+        : viewAt(doc, s.path);
+    return applyDeclutter(source, mode);
   }
 
   private render(wanted: ViewState, keepCamera: boolean): void {
-    const path = this.existingPath(wanted.path);
+    const s = this.resolve(wanted);
     const started = performance.now();
-    const scene = layoutDiagram(this.viewFor(path));
-    const layoutMs = performance.now() - started;
-    const selected = wanted.selected && scene.nodes.some((n) => n.id === wanted.selected) ? wanted.selected : undefined;
+    const scene = layoutDiagram(this.viewFor(s));
+    this.layoutMs = performance.now() - started;
+    const selected = s.selected && scene.nodes.some((n) => n.id === s.selected) ? s.selected : undefined;
     this.scene = scene;
-    this.state = { path, selected };
+    this.state = { ...s, selected, trace: selected ? s.trace : undefined };
 
     this.svg.removeAttribute("hidden");
     this.svg.setAttribute("aria-label", `${scene.title}: ${scene.nodes.length} boxes`);
@@ -106,28 +169,53 @@ export class Viewer {
     this.renderMinimap();
     if (keepCamera) this.applyCamera();
     else this.fitView();
-    for (const id of ["btn-zoom-in", "btn-zoom-out", "btn-fit"]) (document.getElementById(id) as HTMLButtonElement).disabled = false;
-    this.on.rendered(scene, layoutMs);
+    for (const id of ["btn-zoom-in", "btn-zoom-out", "btn-fit", "btn-export", "btn-find"]) {
+      document.getElementById(id)?.removeAttribute("disabled");
+    }
+    this.notify();
   }
 
-  /** Go to a level (and selection); `push` adds a history entry so Back returns. */
-  private go(next: ViewState, push: boolean): void {
+  private notify(): void {
+    if (this.loaded && this.scene) this.on.changed({ loaded: this.loaded, scene: this.scene, state: this.state, layoutMs: this.layoutMs });
+  }
+
+  /** Go to a view; `push` adds a history entry so Back returns. */
+  go(next: ViewState, push: boolean): void {
     if (!this.loaded) return;
-    const levelChanged = next.path.join(".") !== this.state.path.join(".");
-    if (levelChanged) this.moved = false;
-    this.render(next, !levelChanged);
+    const viewChanged = !sameView(next, this.state);
+    if (viewChanged) this.moved = false;
+    this.render(next, !viewChanged);
     this.writeHash(push);
   }
 
+  /** Open a folder box, a proposal package, or a nested proposal group. */
   drill(id: NodeID): void {
-    if (this.loaded?.doc.kind !== "hierarchy") return;
-    this.go({ path: segs(id) }, true);
+    if (!this.hierarchy()) return;
+    if (this.state.proposal) this.go({ ...this.state, layer: id, selected: undefined, trace: undefined }, true);
+    else this.go({ ...this.state, path: segs(id), selected: undefined, trace: undefined }, true);
   }
 
   up(): void {
-    if (this.state.path.length === 0) return;
-    const child = this.state.path.join(".");
-    this.go({ path: this.state.path.slice(0, -1), selected: child }, true);
+    if (this.state.layer) this.go({ ...this.state, layer: undefined, selected: this.state.layer, trace: undefined }, true);
+    else if (this.state.path.length > 0) {
+      this.go({ ...this.state, path: this.state.path.slice(0, -1), selected: this.state.path.join("."), trace: undefined }, true);
+    }
+  }
+
+  setMode(mode: Declutter): void {
+    this.go({ ...this.state, mode }, false);
+  }
+
+  /** The code's namespace tree (undefined) or a proposal. */
+  setProposal(proposal: NodeID | undefined): void {
+    this.go({ path: [], proposal, mode: this.state.mode }, true);
+  }
+
+  /** Show a class wherever it lives in the namespace tree, selected. */
+  reveal(id: NodeID): void {
+    if (this.hierarchy()) this.go({ path: segs(id).slice(0, -1), selected: id, mode: this.state.mode }, true);
+    else this.select(id);
+    this.centerOnSelection();
   }
 
   private writeHash(push: boolean): void {
@@ -138,35 +226,54 @@ export class Viewer {
     else history.replaceState(null, "", url);
   }
 
-  // ---------- selection ----------
+  // ---------- selection and tracing ----------
 
   select(id: NodeID | undefined): void {
-    this.state = { ...this.state, selected: id };
+    this.state = { ...this.state, selected: id, trace: undefined };
     this.writeHash(false);
     this.applySelection();
+    this.notify();
+  }
+
+  setTrace(trace: Trace | undefined): void {
+    if (!this.state.selected) return;
+    this.state = { ...this.state, trace };
+    this.writeHash(false);
+    this.applySelection();
+    this.notify();
   }
 
   private applySelection(): void {
     const id = this.state.selected;
     for (const el of this.viewport.querySelectorAll(".u-selected, .u-related")) el.classList.remove("u-selected", "u-related");
-    if (!id) {
+    if (!id || !this.scene) {
       this.svg.removeAttribute("data-selection");
       return;
     }
     this.svg.setAttribute("data-selection", id);
-    const related = new Set([id]);
+    let nodes: Set<NodeID>;
+    let edges: Set<string>;
+    if (this.state.trace) ({ nodes, edges } = traceFrom(this.scene, id, this.state.trace));
+    else {
+      const touching = this.scene.edges.filter((e) => e.from === id || e.to === id);
+      edges = new Set(touching.map((e) => e.id));
+      nodes = new Set([id, ...touching.flatMap((e) => [e.from, e.to])]);
+    }
     for (const e of this.viewport.querySelectorAll<SVGGElement>("[data-edge-id]")) {
-      const { from, to } = e.dataset;
-      if (from === id || to === id) {
-        e.classList.add("u-related");
-        related.add(from as string).add(to as string);
-      }
+      if (edges.has(e.dataset.edgeId as string)) e.classList.add("u-related");
     }
     for (const nd of this.viewport.querySelectorAll<SVGGElement>("[data-node-id]")) {
       const nid = nd.dataset.nodeId as string;
-      if (related.has(nid)) nd.classList.add("u-related");
+      if (nodes.has(nid)) nd.classList.add("u-related");
       if (nid === id) nd.classList.add("u-selected");
     }
+  }
+
+  private centerOnSelection(): void {
+    const node = this.scene?.nodes.find((n) => n.id === this.state.selected);
+    if (!node) return;
+    const k = Math.max(this.camera.k, 0.8);
+    this.setCamera(centerOn({ ...this.camera, k }, node.x + node.width / 2, node.y + node.height / 2, this.size()));
   }
 
   // ---------- camera ----------
@@ -204,21 +311,32 @@ export class Viewer {
   private renderBreadcrumbs(): void {
     const nav = document.getElementById("breadcrumbs") as HTMLElement;
     const loaded = this.loaded as Loaded;
-    if (this.state.path.length === 0) {
+    const s = this.state;
+    const crumbs: { label: string; to: ViewState }[] = [];
+    const doc = this.hierarchy();
+    if (s.proposal && doc) {
+      const named = namedProposals(doc).find((p) => p.id === s.proposal);
+      crumbs.push({ label: named?.name ?? s.proposal, to: { path: [], proposal: s.proposal, mode: s.mode } });
+      if (s.layer) {
+        const label = this.scene?.packages.find((p) => p.id === s.layer)?.label ?? s.layer;
+        crumbs.push({ label, to: { ...s } });
+      }
+    } else if (s.path.length > 0) {
+      crumbs.push({ label: documentTitle(loaded.doc), to: { path: [], mode: s.mode } });
+      s.path.forEach((seg, i) => crumbs.push({ label: seg, to: { path: s.path.slice(0, i + 1), mode: s.mode } }));
+    }
+    if (crumbs.length === 0) {
       nav.replaceChildren();
       return;
     }
     const ol = document.createElement("ol");
-    const crumbs = [{ label: documentTitle(loaded.doc), path: [] as string[] }].concat(
-      this.state.path.map((seg, i) => ({ label: seg, path: this.state.path.slice(0, i + 1) })),
-    );
     crumbs.forEach((c, i) => {
       const li = document.createElement("li");
       const b = document.createElement("button");
       b.type = "button";
       b.textContent = c.label;
       if (i === crumbs.length - 1) b.setAttribute("aria-current", "location");
-      else b.addEventListener("click", () => this.go({ path: c.path }, true));
+      else b.addEventListener("click", () => this.go(c.to, true));
       li.append(b);
       ol.append(li);
     });
@@ -270,23 +388,25 @@ export class Viewer {
       }
       this.setCamera(pan(drag.cam, dx, dy));
     });
-    const end = () => {
+    this.svg.addEventListener("pointerup", () => {
       const d = drag;
       drag = undefined;
       this.svg.classList.remove("panning");
       if (d && !d.moved) this.select(d.node);
-    };
-    this.svg.addEventListener("pointerup", end);
+    });
     this.svg.addEventListener("pointercancel", () => {
       drag = undefined;
       this.svg.classList.remove("panning");
     });
     this.svg.addEventListener("dblclick", (e) => {
-      // A folder row inside a box opens that folder; elsewhere the box itself.
-      const row = (e.target as Element).closest<SVGGElement>(".u-drill[data-target]");
+      // A folder row opens that folder, a frame its proposal package, else the box itself.
+      const target = e.target as Element;
+      const row = target.closest<SVGGElement>(".u-drill[data-target]");
+      const frame = target.closest<SVGGElement>("[data-frame-id]");
       const node = this.nodeAt(e.target);
       if (row?.dataset.target) this.drill(row.dataset.target);
       else if (node?.classList.contains("u-drillable")) this.drill(node.dataset.nodeId as string);
+      else if (frame && this.state.proposal) this.drill(frame.dataset.frameId as string);
     });
     this.svg.addEventListener(
       "wheel",
@@ -303,17 +423,15 @@ export class Viewer {
       const s = this.scene;
       if (!s) return;
       const r = this.minimap.getBoundingClientRect();
-      const wx = ((e.clientX - r.left) / r.width) * s.width;
-      const wy = ((e.clientY - r.top) / r.height) * s.height;
-      this.setCamera(centerOn(this.camera, wx, wy, this.size()));
+      this.setCamera(centerOn(this.camera, ((e.clientX - r.left) / r.width) * s.width, ((e.clientY - r.top) / r.height) * s.height, this.size()));
     });
   }
 
   private bindKeys(): void {
     document.addEventListener("keydown", (e) => {
-      if (!this.scene || e.metaKey || e.ctrlKey || e.altKey || isTyping(e.target)) return;
+      if (!this.scene || e.metaKey || e.ctrlKey || e.altKey || isTyping(e.target) || document.querySelector("dialog[open]")) return;
       const actions: Record<string, () => void> = {
-        Escape: () => (this.state.selected ? this.select(undefined) : this.up()),
+        Escape: () => (this.state.trace ? this.setTrace(undefined) : this.state.selected ? this.select(undefined) : this.up()),
         Backspace: () => this.up(),
         "+": () => this.zoomBy(ZOOM_STEP),
         "=": () => this.zoomBy(ZOOM_STEP),

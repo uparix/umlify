@@ -3,9 +3,9 @@ import { ednDiff } from "./support/edn-diff";
 import { recordedCalls, run } from "./support/replay";
 
 // Every call the Clojure domain specs made, replayed against the port
-// (umlviewer DomainReplayTests). Detail and source come in later
-// phases; the layout engine is not ported.
-describe.each(["config", "ir", "policy", "hierarchy", "overlay"])("replayed %s calls", (ns) => {
+// (umlviewer DomainReplayTests). The layout engine and the canvas-drawn
+// class card (detail) are not ported: umlify lays out and draws its own.
+describe.each(["config", "ir", "policy", "hierarchy", "overlay", "source", "source-clojure", "source-rust"])("replayed %s calls", (ns) => {
   it("match the Clojure results", () => {
     const calls = recordedCalls(ns);
     expect(calls.length).toBeGreaterThan(0);

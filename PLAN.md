@@ -207,13 +207,39 @@ with Vite middleware on `examples/uml-viewer.edn`).
    - Still to come (phase 6): the "triangles" declutter mode hides arrows
      but does not yet draw umlviewer's dependency triangles, and the side
      panel does not yet follow the selection.
-6. **Rail and exploration.**
-   - Focus passport, the class card from `Detail`: metrics, ops, fields,
-     relationships.
-   - Source panel: Shiki highlighting, opened at the member line.
-   - Exploration: node finder (⌘K), outline, upstream/downstream reach,
-     proposals list, declutter modes, deep links, export SVG/PNG, present
-     mode.
+6. **Rail and exploration.** *(done)*
+   - Side panel: the view controls (code or a proposal; declutter modes
+     Full, Arrows, Counts, Boxes and Layers, cycled with D), then the
+     selected box's passport. The passport is umlviewer's class card
+     (`core/src/app/passport.ts`), with the same wording and Java-style
+     number formats:
+     - identity: module, level, package;
+     - C/M grades and the CRAP line;
+     - the metrics table per function;
+     - fields and relationships ("depends on" / "used by"; a click selects
+       the other box);
+     - children of a folder (a click opens them).
+   - Source panel: umlviewer's locators ported (`core/src/app/source.ts`;
+     Clojure ns paths, TypeScript, Rust, Python, Java with nested types),
+     replayed against 33 recorded calls. Files come from `/api/source`; the
+     panel opens at the member's line. Shiki 4.5 is loaded on first use,
+     with its CSS-variables theme mapped to archify tokens.
+   - Finder (⌘K, Ctrl-K, /): every module of the document; Enter shows it
+     in its level, selected.
+   - Tracing: dependents ↑ or dependencies ↓ of the selection,
+     transitively (`trace=` in the hash; Esc clears it).
+   - Proposals: choose one in the panel; double-click a frame, a layer box
+     or a nested group to open it; Backspace returns.
+   - Counts mode (umlviewer's "triangles"): arrows are hidden, and each box
+     carries ▲ n / ▼ n chips for incoming and outgoing dependencies, red
+     when one violates, with the other ends in the tooltip.
+   - Export (E): standalone SVG with resolved theme colours, the diagram
+     stylesheet and JetBrains Mono embedded, or a 2× PNG drawn from it.
+   - Presentation stage (F).
+   - Checked by 8 new core tests (source, passport), 8 web unit tests, and
+     9 browser tests.
+   - Not done: archify's separate outline list; the finder covers finding
+     a box.
 7. **Packaging.** `npm run build` produces the bundled web app plus a
    single `umlify` bin (`npm link`), and a README.
 

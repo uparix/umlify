@@ -20,6 +20,7 @@ import {
 } from "../../src/domain/model";
 import * as Policy from "../../src/domain/policy";
 import { applyMetrics, applyMetricsToDiagram, metricsFromEDN, overlayClass } from "../../src/metrics/overlay";
+import * as Source from "../../src/app/source";
 import {
   classEDN,
   crapSummaryEDN,
@@ -78,6 +79,7 @@ const edges = (x: EDN): Edge[] => (items(x) ?? []).map(edge);
 const path = (x: EDN): NodeID[] => (items(x) ?? []).flatMap((e) => idName(e) ?? []);
 const entries = (x: EDN) => (items(x) ?? []).flatMap((e) => decodeNSEntry(e) ?? []);
 const nullable = (x: EDN | undefined): EDN => (x === undefined ? null : x);
+const formats = (x: EDN): string[] => (items(x) ?? []).flatMap((f) => text(f) ?? []);
 
 function ranks(x: EDN): Policy.Ranks {
   const out: Policy.Ranks = new Map();
@@ -235,6 +237,30 @@ export function run(call: Call): EDN {
       }
       return diagramEDN(applyMetricsToDiagram(diagram(d), metrics));
     }
+
+    // ---------- source ----------
+    case "source/pattern-start":
+      return nullable(Source.patternStart(text(arg(0)) ?? "", text(arg(1)), formats(arg(2))));
+    case "source/line-number":
+      return Source.lineNumber(must(text(arg(0)), "text"), must(integer(arg(1)), "offset"));
+    case "source/declaration-line":
+      return Source.declarationLine(must(text(arg(0)), "text"), must(integer(arg(1)), "offset"));
+    case "source/line-member":
+      return nullable(Source.lineMember(text(arg(0)) ?? "", text(arg(1)), formats(arg(2))));
+    case "source/member-line-of":
+      return nullable(Source.memberLineOf(text(arg(0)) ?? "", text(arg(1)), formats(arg(2))));
+    case "source/file-title": {
+      const i = arg(0);
+      return Source.fileTitle({ ns: text(get(i, "ns")), name: text(get(i, "name")), file: text(get(i, "file")) });
+    }
+    case "source-clojure/extract-member":
+      return nullable(Source.clojureExtractMember(text(arg(0)) ?? "", text(arg(1))));
+    case "source-clojure/member-line":
+      return nullable(Source.clojureMemberLine(text(arg(0)) ?? "", text(arg(1))));
+    case "source-rust/extract-member":
+      return nullable(Source.rustExtractMember(text(arg(0)) ?? "", text(arg(1))));
+    case "source-rust/member-line":
+      return nullable(Source.memberLineOf(text(arg(0)) ?? "", text(arg(1)), Source.RUST_FORMATS));
 
     default:
       throw new Unsupported(call.fn);

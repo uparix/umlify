@@ -1,7 +1,7 @@
 import { spawn, type ChildProcess } from "node:child_process";
-import { cpSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 /**
  * A scratch copy of examples/ served by the real umlify CLI (built web app),
@@ -58,6 +58,12 @@ export class ScratchProject {
   writeAtomically(path: string, text: string): void {
     writeFileSync(`${path}.tmp`, text);
     renameSync(`${path}.tmp`, path);
+  }
+
+  /** Add a file to the project, `rel` relative to its root. */
+  write(rel: string, text: string): void {
+    mkdirSync(dirname(join(this.dir, rel)), { recursive: true });
+    writeFileSync(join(this.dir, rel), text);
   }
 
   /** Rewrite the IR through `edit`. */

@@ -64,6 +64,8 @@ export interface Scene {
   nodes: SceneNode[];
   edges: SceneEdge[];
   frames: SceneFrame[];
+  /** Every package of the view, framed or not. */
+  packages: { id: NodeID; label: string }[];
 }
 
 /** archify's class grid (gaps leave room for markers and labels), plus umlify's row wrap and frames. */
@@ -206,5 +208,6 @@ export function layoutDiagram(d: Diagram): Scene {
   const bottom = Math.max(0, ...rects.map((r) => r.y + r.height), ...routePoints.map((p) => p[1]));
   const width = Math.ceil(Math.max(LAYOUT.minWidth, right + LAYOUT.margin));
   const height = Math.ceil(Math.max(LAYOUT.minHeight, bottom + LAYOUT.margin));
-  return { title: d.title, proposal: d.proposal, hideEdges: d.hideEdges, width, height, nodes, edges: sceneEdges, frames };
+  const packages = d.packages.map((p) => ({ id: p.id, label: p.label ?? p.id }));
+  return { title: d.title, proposal: d.proposal, hideEdges: d.hideEdges, width, height, nodes, edges: sceneEdges, frames, packages };
 }
