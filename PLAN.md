@@ -143,12 +143,26 @@ Each phase ends with green tests and a runnable `npm run dev`.
      newest-file-wins, which the goldens never exercise.
    - It stays pure: callers pass file texts with mtimes. Finding
      `.metrics/` and file stamps move to the server (phase 4).
-3. **Archify grid layout + routing.** Rows from level or rank, columns by
-   barycenter, ports, foreign ovals, edge routes and markers.
-   - Node sizes come from the archify class-card metrics (JetBrains Mono,
-     measured after `document.fonts.ready`).
-   - *Done when* unit tests pass (no overlaps, a stable order for the same
-     input, every edge attached) and the examples render.
+3. **Archify grid layout + routing.** *(done)* `packages/core/src/layout/`.
+   - archify's router, geometry, route-quality and banded-grid modules are
+     vendored unchanged in `layout/archify/` (Apache-2.0; see the README
+     there). They are browser-safe: the one `process.env` read is in
+     archify's quality gates, which the router never calls.
+   - umlify adds what archify leaves to the author: row/col cells.
+     - Rows come from `:level` (highest on top) or, without distinct
+       levels, from dependency depth (dependents above what they use).
+     - Columns are ordered by barycenter sweeps; rows wrap after 6 boxes and
+       are centred with half-step cells.
+     - Foreign ovals go in a row below; packages are framed when a view has
+       several; `:direction :lr` transposes.
+   - Cards use archify's class-card metrics and text estimate; each holds
+     children, public members and ports, so no DOM is needed.
+   - All 38 reference views and the examples pass the invariants: no
+     overlaps, boxes inside their frame, every route orthogonal and attached
+     to both borders, the same output for the same input.
+   - Speed: under 150 ms for a 13-box level; about 0.4–0.6 s for a 30-box,
+     67-edge proposal. If larger projects feel slow, phase 5 can move
+     layout into a Web Worker.
 4. **Server + live reload.** CLI, root discovery, file API, watcher, SSE.
    *Done when* a Playwright test rewrites `crap.edn` or the IR (temp file +
    rename) and the page repaints within 1 s without losing selection or

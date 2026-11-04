@@ -1,5 +1,5 @@
 // Public surface of @umlify/core: EDN, the umlviewer data model, the
-// namespace-tree views, and the metrics overlay.
+// namespace-tree views, the metrics overlay, and the archify grid layout.
 export * from "./edn/value";
 export { EDNReadError, readAllEDN, readEDN } from "./edn/reader";
 export { groupBy, hasheq } from "./edn/clojure-hash";
@@ -22,3 +22,5 @@ export {
   type MutationForm,
   type MutationSnapshot,
 } from "./metrics/overlay";
+export { layoutDiagram, LAYOUT, type Scene, type SceneEdge, type SceneFrame, type SceneNode } from "./layout/layout";
+export { CARD, measureCard, memberText, type Card, type CardRow, type Compartment } from "./layout/card";
