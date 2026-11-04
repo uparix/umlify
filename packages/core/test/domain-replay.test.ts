@@ -3,9 +3,9 @@ import { ednDiff } from "./support/edn-diff";
 import { recordedCalls, run } from "./support/replay";
 
 // Every call the Clojure domain specs made, replayed against the port
-// (umlviewer DomainReplayTests). Overlay, detail and source come in later
+// (umlviewer DomainReplayTests). Detail and source come in later
 // phases; the layout engine is not ported.
-describe.each(["config", "ir", "policy", "hierarchy"])("replayed %s calls", (ns) => {
+describe.each(["config", "ir", "policy", "hierarchy", "overlay"])("replayed %s calls", (ns) => {
   it("match the Clojure results", () => {
     const calls = recordedCalls(ns);
     expect(calls.length).toBeGreaterThan(0);

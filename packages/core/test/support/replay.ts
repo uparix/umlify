@@ -1,4 +1,4 @@
-import { EDNMap, asMap, get, idName, integer, items, kw, num, truthy, type EDN } from "../../src/edn/value";
+import { EDNMap, asMap, get, idName, integer, items, kw, num, text, truthy, type EDN } from "../../src/edn/value";
 import * as Grades from "../../src/domain/grades";
 import * as Hierarchy from "../../src/domain/hierarchy";
 import * as IR from "../../src/domain/ir";
@@ -19,17 +19,19 @@ import {
   type NodeID,
 } from "../../src/domain/model";
 import * as Policy from "../../src/domain/policy";
+import { applyMetrics, applyMetricsToDiagram, metricsFromEDN, overlayClass } from "../../src/metrics/overlay";
 import {
   classEDN,
   crapSummaryEDN,
   diagramEDN,
+  documentEDN,
   edgeEDN,
   layerEDN,
   mutantsEDN,
   namedProposalEDN,
   normalizedEDN,
   ranksEDN,
-} from "./encode";
+} from "../../src/domain/encode";
 import { readFixture } from "./fixtures";
 
 /**
@@ -215,6 +217,23 @@ export function run(call: Call): EDN {
         ? ((mode === "methods" ? "elements" : mode) as Hierarchy.Declutter)
         : "full";
       return diagramEDN(Hierarchy.applyDeclutter(diagram(arg(0)), declutter));
+    }
+
+    // ---------- overlay ----------
+    case "overlay/class-namespace":
+      return nullable(cls(arg(0)).ns);
+    case "overlay/overlay-class": {
+      const metrics = metricsFromEDN(new EDNMap([[kw("crap"), arg(1)], [kw("mutate"), arg(2)]]));
+      const owned = a.length > 3 ? items(a[3])?.flatMap((x) => text(x) ?? []) : undefined;
+      return classEDN(overlayClass(cls(arg(0)), metrics, owned));
+    }
+    case "overlay/apply-metrics": {
+      const d = arg(0);
+      const metrics = metricsFromEDN(arg(1));
+      if (truthy(get(d, "hierarchical")) || get(d, "diagrams") !== undefined) {
+        return documentEDN(applyMetrics(IR.documentFrom(d), metrics));
+      }
+      return diagramEDN(applyMetricsToDiagram(diagram(d), metrics));
     }
 
     default:

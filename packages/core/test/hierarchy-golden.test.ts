@@ -4,7 +4,7 @@ import * as Hierarchy from "../src/domain/hierarchy";
 import { decodeHierarchyDocument, type Diagram, type HierarchyDocument } from "../src/domain/model";
 import { namedProposals } from "../src/domain/policy";
 import { ednDiff } from "./support/edn-diff";
-import { diagramEDN } from "./support/encode";
+import { diagramEDN } from "../src/domain/encode";
 import { fixtureFiles, readFixture } from "./support/fixtures";
 
 // The `:view` stage of every golden scene: hierarchy plus declutter on the

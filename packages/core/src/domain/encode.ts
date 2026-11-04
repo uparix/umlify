@@ -1,19 +1,23 @@
-import { EDNMap, EDNSet, kw, type EDN } from "../../src/edn/value";
+import { EDNMap, EDNSet, kw, type EDN } from "../edn/value";
 import type {
   CrapMetric,
   CrapSummary,
   Diagram,
   DiagramClass,
   Edge,
+  HierarchyDocument,
   Member,
   Mutants,
   NSEntry,
+  Order,
   Package,
   PortDep,
-} from "../../src/domain/model";
-import type { Layer, NamedProposal, NormalizedProposal, Ranks } from "../../src/domain/policy";
+  UMLDocument,
+} from "./model";
+import type { Layer, NamedProposal, NormalizedProposal, Ranks } from "./policy";
 
-// Model -> EDN, as umlviewer's encoders write it, for comparing with the
+// Model -> EDN, as umlviewer's encoders write it. The overlay re-reads
+// painted hand-drawn diagrams through it, and tests compare it with the
 // Clojure goldens. Keys carrying nothing (undefined, nil, false, empty) are
 // skipped, which the Clojure code never tells apart from a missing key.
 
@@ -151,3 +155,36 @@ export const namedProposalEDN = (p: NamedProposal): EDN =>
 
 export const ranksEDN = (r: Ranks): EDN =>
   new EDNMap([...r].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([k, v]) => [kw(k), v]));
+
+const byKey = <T>(xs: [string, T][]): [string, T][] => xs.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+
+const orderEDN = (o: Order): EDN =>
+  o.kind === "list"
+    ? o.ids.map(kw)
+    : new EDNMap(byKey([...o.paths]).map(([path, ids]) => [path, ids.map(kw)]));
+
+export const hierarchyDocumentEDN = (h: HierarchyDocument): EDN =>
+  build([
+    ["hierarchical", true],
+    ["title", h.title],
+    ["prefix", h.prefix],
+    ["order", orderEDN(h.order)],
+    ["levels", h.levels],
+    [
+      "edge-kinds",
+      // pairKey joins from and to with NUL; sorting the key sorts by (from, to).
+      new EDNMap(byKey([...h.edgeKinds]).map(([k, kind]) => [k.split("\u0000").map(kw), kw(kind)])),
+    ],
+    ["omit-edges", h.omitEdges.map((p) => [kw(p.from), kw(p.to)])],
+    ["omit", h.omit.map(kw)],
+    ["classes", h.classes.map(classEDN)],
+    ["edges", h.edges.map(edgeEDN)],
+    ["proposals", h.proposals],
+    ["proposal", h.proposal],
+    ["policy-file", h.policyFile],
+  ]);
+
+export const documentEDN = (d: UMLDocument): EDN =>
+  d.kind === "hierarchy"
+    ? hierarchyDocumentEDN(d.doc)
+    : new EDNMap([[kw("title"), d.title], [kw("diagrams"), d.diagrams.map(diagramEDN)]]);

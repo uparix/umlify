@@ -135,8 +135,14 @@ Each phase ends with green tests and a runnable `npm run dev`.
      order).
    - JS has one number type, so an integral float (`1.0`) reads as `1`;
      nothing the viewer shows depends on the difference.
-2. **Metrics overlay.** CRAP plus both mutation formats, snapshot
-   ownership, pooling. *Done when* the 5 painted documents match.
+2. **Metrics overlay.** *(done)* `packages/core/src/metrics/overlay.ts`:
+   `crap.edn` plus both mutation formats, snapshot ownership, pooling.
+   - All 5 painted documents match Clojure, op order included, and 41
+     recorded overlay calls replay equal.
+   - Hand-written tests cover the snapshot ownership precedence and
+     newest-file-wins, which the goldens never exercise.
+   - It stays pure: callers pass file texts with mtimes. Finding
+     `.metrics/` and file stamps move to the server (phase 4).
 3. **Archify grid layout + routing.** Rows from level or rank, columns by
    barycenter, ports, foreign ovals, edge routes and markers.
    - Node sizes come from the archify class-card metrics (JetBrains Mono,
