@@ -240,8 +240,17 @@ with Vite middleware on `examples/uml-viewer.edn`).
      9 browser tests.
    - Not done: archify's separate outline list; the finder covers finding
      a box.
-7. **Packaging.** `npm run build` produces the bundled web app plus a
-   single `umlify` bin (`npm link`), and a README.
+7. **Packaging.** *(done)*
+   - `npm run build` builds the web app (`packages/web/dist`) and compiles
+     the server to JavaScript (`packages/server/dist`). Node does not strip
+     types under `node_modules`, so the installed bin must be JS.
+   - The root package's `bin` is `umlify`, so `npm link` installs the
+     command (`--help`, `--version`).
+   - Browser tests run the compiled bin.
+   - README (install, use, keys, links, differences from umlviewer,
+     development) and `docs/DATA-FORMAT.md`: umlviewer's contract, edited
+     for umlify (read-only; no session, mailbox or `--snapshot`; ports drawn
+     as rows; archify layout).
 
 ## Risks and mitigations
 

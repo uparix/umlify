@@ -2,6 +2,9 @@
   "name": "umlify",
   "private": true,
   "description": "Live, read-only browser viewer for umlviewer IR files, in the style of archify.",
+  "bin": {
+    "umlify": "packages/server/dist/cli.js"
+  },
   "type": "module",
   "engines": {
     "node": ">=22.18"
@@ -10,10 +13,10 @@
     "packages/*"
   ],
   "scripts": {
-    "start": "node packages/server/src/cli.ts",
+    "start": "node packages/server/dist/cli.js",
     "dev": "node packages/server/src/cli.ts --dev examples/uml-viewer.edn",
     "dev:web": "npm run dev -w @umlify/web",
-    "build": "npm run build -w @umlify/web",
+    "build": "npm run build -w @umlify/web && npm run build -w @umlify/server",
     "typecheck": "tsc -p packages/core && tsc -p packages/server && tsc -p packages/web && tsc -p e2e",
     "lint": "eslint .",
     "test": "vitest run",
@@ -30,5 +33,6 @@
     "typescript-eslint": "^8.72.1",
     "vite": "^8.3.5",
     "vitest": "^5.1.0"
-  }
+  },
+  "version": "0.1.0"
 }

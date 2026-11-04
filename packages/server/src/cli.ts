@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 import { spawn } from "node:child_process";
-import { existsSync, realpathSync, statSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { relativeToRoot, startServer } from "./http.ts";
 import { findProjectRoot } from "./project.ts";
 
 const USAGE = `Usage: umlify <ir.edn> [--port 4321] [--no-open] [--browser brave|chrome] [--dev]
+       umlify --help | --version
 
 Opens the UML diagram described by <ir.edn> in the browser and updates it
 whenever the IR or the project's .metrics/ change. Read-only.
@@ -44,6 +45,7 @@ const { values, positionals } = (() => {
         browser: { type: "string" },
         dev: { type: "boolean", default: false },
         help: { type: "boolean", short: "h", default: false },
+        version: { type: "boolean", short: "v", default: false },
       },
     });
   } catch (e) {
@@ -53,6 +55,12 @@ const { values, positionals } = (() => {
 
 if (values.help) {
   console.log(USAGE);
+  process.exit(0);
+}
+if (values.version) {
+  // ../package.json from both src/ (development) and dist/ (installed).
+  const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as { version: string };
+  console.log(pkg.version);
   process.exit(0);
 }
 const [input] = positionals;

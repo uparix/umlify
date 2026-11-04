@@ -4,11 +4,12 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
 /**
- * A scratch copy of examples/ served by the real umlify CLI (built web app),
+ * A scratch copy of examples/ served by the built umlify CLI and web app,
  * with files rewritten the way producers write them: temp file, then rename.
  */
 
-const cli = new URL("../../packages/server/src/cli.ts", import.meta.url).pathname;
+// The compiled bin, as `npm link` installs it (npm run e2e builds it first).
+const cli = new URL("../../packages/server/dist/cli.js", import.meta.url).pathname;
 const examples = new URL("../../examples/", import.meta.url).pathname;
 
 export class ScratchProject {

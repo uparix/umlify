@@ -14,5 +14,10 @@ packages/web/src/theme/fonts/OFL.txt.
 Copyright 2020 The JetBrains Mono Project Authors
 (https://github.com/JetBrains/JetBrainsMono)
 
+The web app uses Shiki (https://shiki.style) for source highlighting,
+licensed under the MIT License.
+Copyright (c) 2021 Pine Wu
+Copyright (c) 2023 Anthony Fu
+
 The test fixtures in packages/core/test/fixtures and the files in examples/
 come from the umlviewer project.

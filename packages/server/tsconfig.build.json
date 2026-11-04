@@ -1,0 +1,13 @@
+{
+  // Compiles the server to dist/ for the `umlify` bin: Node does not strip
+  // types under node_modules, so an installed copy must be JavaScript.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "allowImportingTsExtensions": false,
+    "rewriteRelativeImportExtensions": true,
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": ["src"]
+}
