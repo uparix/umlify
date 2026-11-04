@@ -1,0 +1,1 @@
+{:namespace "shop.m3", :forms [{:id "defn/f0", :killed 1, :survived 0, :uncovered 0, :sites 2} {:id "defn-/f1", :killed 2, :survived 1, :uncovered 1, :sites 3} {:id "defn/g", :killed 3, :survived 0, :uncovered 2, :sites 4}]}

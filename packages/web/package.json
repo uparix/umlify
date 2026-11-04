@@ -1,0 +1,15 @@
+{
+  "name": "@umlify/web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Browser app of umlify: the diagram in archify's look.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@umlify/core": "0.0.0"
+  }
+}
