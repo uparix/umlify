@@ -28,13 +28,12 @@
  :levels
   [[:domain
     :source
-    :graph
     :clojure-language
     :typescript-language
     :rust-language
     :python-language]
    [:engine]
-   [:application]
+   [:application :graph]
    [:adapters]
    [:main]],
  :policy-file "examples/uml-viewer.policy.edn",
@@ -99,7 +98,7 @@
    {:from :engine.compose, :to :domain.geom, :kind :dependency}
    {:from :main.ir-generator, :to :rust-language.graph-rust, :kind :dependency}
    {:from :engine.route, :to :engine.layout, :kind :dependency}
-   {:from :domain.hierarchy, :to :domain.policy, :kind :dependency}
+   {:from :domain.hierarchy, :to :domain.policy, :kind :association}
    {:from :adapters.draw, :to :domain.hierarchy, :kind :dependency}
    {:from :adapters.sketch, :to :engine.layout, :kind :dependency}
    {:from :application.ir-generator, :to :graph, :kind :dependency}
@@ -111,7 +110,7 @@
    {:from :engine.hit, :to :engine.layout, :kind :dependency}
    {:from :application.document, :to :domain.policy, :kind :dependency}
    {:from :typescript-language.graph-typescript, :to :graph, :kind :implements}
-   {:from :domain.hierarchy, :to :graph, :kind :dependency}
+   {:from :domain.hierarchy, :to :graph, :kind :dependency, :violating true}
    {:from :engine.hit, :to :domain.geom, :kind :dependency}
    {:from :adapters.draw, :to :domain.config, :kind :dependency}
    {:from :main.uml-viewer, :to :clojure-language.source-clojure, :kind :dependency}
@@ -303,7 +302,7 @@
     :ns "uml-viewer.graph",
     :name "Graph",
     :file "src/uml_viewer/graph.clj",
-    :level 0,
+    :level 2,
     :lang :clojure,
     :id :graph}
    {:stereotype nil,
