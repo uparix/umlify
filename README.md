@@ -160,6 +160,10 @@ docs/             the data format
 [PLAN.md](PLAN.md) records how umlify was built and the decisions behind
 it.
 
+## License
+
+[MIT](LICENSE). Third-party parts keep their own licenses; see Credits.
+
 ## Credits
 
 - Theme tokens, the look of the viewer, and the layout and routing modules

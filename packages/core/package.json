@@ -1,6 +1,7 @@
 {
   "name": "@umlify/core",
   "version": "0.1.0",
+  "license": "MIT",
   "private": true,
   "description": "Pure TypeScript port of the umlviewer semantics: EDN, IR, hierarchy, metrics overlay, archify grid layout.",
   "type": "module",

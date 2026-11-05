@@ -1,5 +1,7 @@
 {
   "name": "umlify",
+  "version": "0.1.0",
+  "license": "MIT",
   "private": true,
   "description": "Live, read-only browser viewer for umlviewer IR files, in the style of archify.",
   "bin": {
@@ -33,6 +35,5 @@
     "typescript-eslint": "^8.72.1",
     "vite": "^8.3.5",
     "vitest": "^5.1.0"
-  },
-  "version": "0.1.0"
+  }
 }

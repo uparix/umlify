@@ -1,6 +1,7 @@
 {
   "name": "@umlify/server",
   "version": "0.1.0",
+  "license": "MIT",
   "private": true,
   "description": "Local, read-only server of umlify: serves the project's IR, metrics and sources, and pushes changes over SSE.",
   "type": "module",

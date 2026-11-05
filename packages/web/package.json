@@ -1,6 +1,7 @@
 {
   "name": "@umlify/web",
   "version": "0.1.0",
+  "license": "MIT",
   "private": true,
   "description": "Browser app of umlify: the diagram in archify's look.",
   "type": "module",
